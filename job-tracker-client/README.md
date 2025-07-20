@@ -1,12 +1,50 @@
-# React + Vite
+# Job Tracker (MERN Stack)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack job tracking app built with the MERN stack to help users organize, manage, and track their job applications.
 
-Currently, two official plugins are available:
+## 🔧 Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend:** React, Vite, Tailwind CSS, React Router
+- **Backend:** Node.js, Express, MongoDB (Mongoose)
+- **Auth:** JWT
+- **Deployment:** Vercel (frontend), Render (backend)
 
-## Expanding the ESLint configuration
+## ✨ Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- User authentication (JWT-based)
+- Add, edit, and delete job applications
+- Filter and search functionality
+- Responsive design
+- Persistent data storage in MongoDB Atlas
+
+## 🧠 Why I Built This
+
+To showcase my full-stack development skills using the MERN stack and build a real-world portfolio project useful for job seekers like myself.
+
+## 📸 Screenshots
+
+_Add UI screenshots or a GIF demo here._
+
+## 🛠️ Setup
+
+1. Clone this repo
+2. Run `npm install` in both `/client` and `/server`
+3. Add `.env` file in `/server` with your MongoDB URI
+4. Run the app
+
+## 📌 Live Demo
+
+👉 [Frontend on Vercel](#)  
+👉 [Backend on Render](#)
+
+---
+
+Let me know if you want me to customize this based on your project progress so far.
+
+#### 2. 📥 Share Your Repo Link
+I’ll review it and give you detailed feedback (structure, commits, etc.)
+
+#### 3. ⏭️ Next Code Task: 
+> Connect MongoDB, build the Job model, and add the `POST /api/jobs` route.
+
+Ready to keep pushing?
