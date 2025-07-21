@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../api/axious";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import { Cog } from "lucide-react";
 import {
   LogOut,
   Plus,
@@ -54,23 +55,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="flex items-center justify-between p-4 shadow bg-white sticky top-0 z-20">
-        <div className="flex items-center gap-2 text-xl font-bold text-blue-600">
-          <Layers3 /> JobTracker
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-700 hidden sm:block">👋 {user?.name}</span>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
-        </div>
-      </header>
-
       {/* Body */}
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         {/* Stats */}
