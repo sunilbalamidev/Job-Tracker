@@ -1,34 +1,42 @@
+// src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
 import axiosInstance from "../api/axious";
-import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
-import { Plus, Briefcase, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Plus, Briefcase, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import ConfirmModal from "../components/ConfirmModal";
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState(null);
   const navigate = useNavigate();
 
+  const [filters, setFilters] = useState({
+    status: "all",
+    jobType: "all",
+    sort: "latest",
+    search: "",
+  });
+
   useEffect(() => {
     const fetchJobs = async () => {
+      setLoading(true);
       try {
-        const res = await axiosInstance.get("/jobs");
+        const query = new URLSearchParams(filters).toString();
+        const res = await axiosInstance.get(`/jobs?${query}`);
         setJobs(res.data);
       } catch (err) {
-        toast.error("Failed to fetch jobs");
+        toast.error("Failed to fetch jobs", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchJobs();
-  }, []);
+  }, [filters]);
 
   const openDeleteModal = (id) => {
     setJobToDelete(id);
@@ -50,6 +58,14 @@ const Dashboard = () => {
     } finally {
       closeModal();
     }
+  };
+
+  const activeFilters = Object.entries(filters).filter(
+    ([key, value]) => key !== "sort" && value && value !== "all"
+  );
+
+  const clearFilter = (key) => {
+    setFilters({ ...filters, [key]: "all" });
   };
 
   return (
@@ -84,6 +100,86 @@ const Dashboard = () => {
           </div>
         </section>
 
+        {/* Filters */}
+        <div className="grid sm:grid-cols-4 gap-4 mt-6">
+          <select
+            value={filters.status}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            className="border px-3 py-2 rounded-lg"
+          >
+            <option value="all">All Status</option>
+            <option value="Applied">Applied</option>
+            <option value="Interview">Interview</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+
+          <select
+            value={filters.jobType}
+            onChange={(e) =>
+              setFilters({ ...filters, jobType: e.target.value })
+            }
+            className="border px-3 py-2 rounded-lg"
+          >
+            <option value="all">All Job Types</option>
+            <option value="Full-time">Full-Time</option>
+            <option value="Part-time">Part-Time</option>
+            <option value="Internship">Internship</option>
+            <option value="Contract">Contract</option>
+          </select>
+
+          <select
+            value={filters.sort}
+            onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
+            className="border px-3 py-2 rounded-lg"
+          >
+            <option value="latest">Latest</option>
+            <option value="oldest">Oldest</option>
+            <option value="a-z">A-Z Position</option>
+            <option value="z-a">Z-A Position</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Search company or role"
+            value={filters.search}
+            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            className="border px-3 py-2 rounded-lg"
+          />
+        </div>
+
+        {/* Active Filters Display */}
+        {activeFilters.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {activeFilters.map(([key, value]) => (
+              <span
+                key={key}
+                className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+              >
+                {key}: {value}
+                <button
+                  onClick={() => clearFilter(key)}
+                  className="ml-2 hover:text-red-500"
+                >
+                  <X size={14} />
+                </button>
+              </span>
+            ))}
+            <button
+              className="ml-2 text-sm underline text-blue-600 hover:text-blue-800"
+              onClick={() =>
+                setFilters({
+                  status: "all",
+                  jobType: "all",
+                  sort: "latest",
+                  search: "",
+                })
+              }
+            >
+              Clear All
+            </button>
+          </div>
+        )}
+
         {/* Add Job Button */}
         <div className="flex justify-end">
           <Link
@@ -116,12 +212,17 @@ const Dashboard = () => {
                   {job.position} @ {job.company}
                 </h3>
                 <p className="text-sm text-gray-600">{job.location}</p>
-                <p className="text-sm mt-1">
-                  <span className="font-medium text-gray-700">Status:</span>{" "}
-                  {job.status}
+                <p className="text-sm text-gray-700 mt-1">
+                  <span className="font-medium">Type:</span> {job.jobType}
+                </p>
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium">Status:</span> {job.status}
+                </p>
+                <p className="text-sm text-gray-500">
+                  <span className="font-medium text-gray-600">Posted:</span>{" "}
+                  {new Date(job.createdAt).toLocaleDateString()}
                 </p>
 
-                {/* Buttons */}
                 <div className="mt-4 flex gap-2">
                   <button
                     onClick={() => navigate(`/edit-job/${job._id}`)}
@@ -144,7 +245,6 @@ const Dashboard = () => {
         </section>
       </main>
 
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={modalOpen}
         onClose={closeModal}

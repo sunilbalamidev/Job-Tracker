@@ -15,18 +15,51 @@ router.post("/jobs", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Get all jobs for the logged-in user
+// ✅ Get all jobs with filters, sort, search
 router.get("/jobs", verifyToken, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const jobs = await Job.find({ createdBy: userId }).sort({ createdAt: -1 });
+    const { status, jobType, sort, search } = req.query;
+
+    const queryObject = { createdBy: userId };
+
+    if (status && status !== "all") {
+      queryObject.status = status;
+    }
+
+    if (jobType && jobType !== "all") {
+      const normalizedType = jobType.charAt(0).toUpperCase() + jobType.slice(1); // "full-time" -> "Full-time"
+      queryObject.jobType = normalizedType;
+    }
+
+    if (search) {
+      queryObject.$or = [
+        { position: { $regex: search, $options: "i" } },
+        { company: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    let result = Job.find(queryObject);
+
+    // ✅ Sorting
+    if (sort === "latest") {
+      result = result.sort("-createdAt");
+    } else if (sort === "oldest") {
+      result = result.sort("createdAt");
+    } else if (sort === "a-z") {
+      result = result.sort("position");
+    } else if (sort === "z-a") {
+      result = result.sort("-position");
+    }
+
+    const jobs = await result;
     res.status(200).json(jobs);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Get a single job by ID (ownership check)
+// ✅ Get a single job by ID
 router.get("/jobs/:id", verifyToken, async (req, res) => {
   try {
     const job = await Job.findOne({
@@ -44,7 +77,7 @@ router.get("/jobs/:id", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Update a job by ID (only if user is creator)
+// ✅ Update a job
 router.put("/jobs/:id", verifyToken, async (req, res) => {
   try {
     const updatedJob = await Job.findOneAndUpdate(
@@ -63,7 +96,7 @@ router.put("/jobs/:id", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Delete a job by ID (only if user is creator)
+// ✅ Delete a job
 router.delete("/jobs/:id", verifyToken, async (req, res) => {
   try {
     const deletedJob = await Job.findOneAndDelete({
