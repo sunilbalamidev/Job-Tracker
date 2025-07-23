@@ -21,9 +21,13 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
       minlength: 6,
       select: false, // 👈 Prevents password from being returned in queries by default
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // Allows multiple docs without googleId
     },
   },
   {
@@ -33,7 +37,7 @@ const userSchema = new mongoose.Schema(
 
 // 🔐 Hash password before saving
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password") || !this.password) return next();
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -44,7 +48,7 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// ✅ Add method to compare candidate password with stored hash
+// ✅ Method to compare plain password with hashed one
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };

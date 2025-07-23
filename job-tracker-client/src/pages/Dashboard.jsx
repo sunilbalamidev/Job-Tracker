@@ -2,23 +2,17 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../api/axious";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
-import { Cog } from "lucide-react";
-import {
-  LogOut,
-  Plus,
-  Briefcase,
-  Layers3,
-  Loader2,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { Plus, Briefcase, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import ConfirmModal from "../components/ConfirmModal";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,26 +30,30 @@ const Dashboard = () => {
     fetchJobs();
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const openDeleteModal = (id) => {
+    setJobToDelete(id);
+    setModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this job?")) return;
+  const closeModal = () => {
+    setModalOpen(false);
+    setJobToDelete(null);
+  };
 
+  const handleConfirmDelete = async () => {
     try {
-      await axiosInstance.delete(`/jobs/${id}`);
-      setJobs((prev) => prev.filter((job) => job._id !== id));
+      await axiosInstance.delete(`/jobs/${jobToDelete}`);
+      setJobs((prev) => prev.filter((job) => job._id !== jobToDelete));
       toast.success("Job deleted successfully");
     } catch (err) {
-      toast.error("Failed to delete job");
+      toast.error("Failed to delete job", err);
+    } finally {
+      closeModal();
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Body */}
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         {/* Stats */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -133,7 +131,7 @@ const Dashboard = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(job._id)}
+                    onClick={() => openDeleteModal(job._id)}
                     className="flex items-center gap-1 px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition"
                   >
                     <Trash2 size={16} />
@@ -145,6 +143,14 @@ const Dashboard = () => {
           )}
         </section>
       </main>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        onConfirm={handleConfirmDelete}
+        message="Are you sure you want to delete this job?"
+      />
     </div>
   );
 };

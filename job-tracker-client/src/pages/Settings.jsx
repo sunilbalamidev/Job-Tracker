@@ -4,6 +4,9 @@ import axiosInstance from "../api/axious";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 
+// ✅ NEW: Import the custom modal
+import ConfirmModal from "../components/ConfirmModal";
+
 const Settings = () => {
   const { user, logout } = useAuth();
   const [name, setName] = useState(user?.name || "");
@@ -11,9 +14,12 @@ const Settings = () => {
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  // ✅ NEW: Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    // Replace with real API
+    // Real API
     try {
       await axiosInstance.put("/users/update-profile", { name });
       toast.success("Profile updated!");
@@ -22,7 +28,7 @@ const Settings = () => {
     }
     const updatedUser = { ...user, name };
     localStorage.setItem("user", JSON.stringify(updatedUser));
-    window.location.reload(); // simple force-refresh
+    window.location.reload();
   };
 
   const handleChangePassword = async (e) => {
@@ -41,7 +47,6 @@ const Settings = () => {
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm("Are you sure you want to delete account?")) return;
     try {
       await axiosInstance.delete("/users/delete");
       logout();
@@ -139,13 +144,22 @@ const Settings = () => {
         <p className="text-gray-600 mb-4">
           Permanently delete your account and all associated data.
         </p>
+        {/* ✅ MODIFIED: Opens modal instead of window.confirm */}
         <button
-          onClick={handleDeleteAccount}
+          onClick={() => setModalOpen(true)}
           className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
         >
           Delete Account
         </button>
       </section>
+
+      {/* ✅ NEW: Custom confirmation modal */}
+      <ConfirmModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirm={handleDeleteAccount}
+        message="Are you sure you want to permanently delete your account and all your jobs?"
+      />
     </motion.div>
   );
 };
