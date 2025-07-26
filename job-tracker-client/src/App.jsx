@@ -8,6 +8,7 @@ import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import ProtectedLayout from "./layouts/ProtectedLayout";
+import Stats from "./pages/Stats";
 
 const App = () => {
   return (
@@ -43,6 +44,7 @@ const App = () => {
         <Route path="/add-job" element={<AddJob />} />
         <Route path="/edit-job/:id" element={<AddJob />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/stats" element={<Stats />} />
       </Route>
     </Routes>
   );

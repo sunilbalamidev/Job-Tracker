@@ -1,8 +1,37 @@
 import express from "express";
+import mongoose from "mongoose"; // ✅ Required for ObjectId conversion
 import Job from "../models/Job.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();
+
+// ✅ Get job stats by status (for charts)
+router.get("/jobs/stats", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const stats = await Job.aggregate([
+      { $match: { createdBy: new mongoose.Types.ObjectId(userId) } },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]);
+
+    const defaultStats = {
+      Applied: 0,
+      Interview: 0,
+      Rejected: 0,
+      Offer: 0,
+    };
+
+    stats.forEach((stat) => {
+      defaultStats[stat._id] = stat.count;
+    });
+
+    res.status(200).json(defaultStats);
+  } catch (err) {
+    console.error("Stats Error:", err);
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+});
 
 // ✅ Create a new job
 router.post("/jobs", verifyToken, async (req, res) => {
@@ -15,21 +44,28 @@ router.post("/jobs", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Get all jobs with filters, sort, search
+// ✅ Get all jobs with filters, search, sort, and pagination
 router.get("/jobs", verifyToken, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { status, jobType, sort, search } = req.query;
+    const {
+      status = "all",
+      jobType = "all",
+      sort = "latest",
+      search = "",
+      page = 1,
+      limit = 10,
+    } = req.query;
 
     const queryObject = { createdBy: userId };
 
-    if (status && status !== "all") {
+    if (status !== "all") {
       queryObject.status = status;
     }
 
-    if (jobType && jobType !== "all") {
-      const normalizedType = jobType.charAt(0).toUpperCase() + jobType.slice(1); // "full-time" -> "Full-time"
-      queryObject.jobType = normalizedType;
+    if (jobType !== "all") {
+      queryObject.jobType =
+        jobType.charAt(0).toUpperCase() + jobType.slice(1).toLowerCase();
     }
 
     if (search) {
@@ -41,21 +77,29 @@ router.get("/jobs", verifyToken, async (req, res) => {
 
     let result = Job.find(queryObject);
 
-    // ✅ Sorting
-    if (sort === "latest") {
-      result = result.sort("-createdAt");
-    } else if (sort === "oldest") {
-      result = result.sort("createdAt");
-    } else if (sort === "a-z") {
-      result = result.sort("position");
-    } else if (sort === "z-a") {
-      result = result.sort("-position");
-    }
+    // Sorting
+    if (sort === "latest") result = result.sort("-createdAt");
+    else if (sort === "oldest") result = result.sort("createdAt");
+    else if (sort === "a-z") result = result.sort("position");
+    else if (sort === "z-a") result = result.sort("-position");
 
+    // Pagination
+    const skip = (Number(page) - 1) * Number(limit);
+    result = result.skip(skip).limit(Number(limit));
+
+    const totalJobs = await Job.countDocuments(queryObject);
     const jobs = await result;
-    res.status(200).json(jobs);
+    const numOfPages = Math.ceil(totalJobs / limit);
+
+    res.status(200).json({
+      jobs,
+      totalJobs,
+      numOfPages,
+      currentPage: Number(page),
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Fetch Jobs Error:", err);
+    res.status(500).json({ error: "Failed to fetch jobs" });
   }
 });
 

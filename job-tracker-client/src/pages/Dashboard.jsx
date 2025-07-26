@@ -27,7 +27,7 @@ const Dashboard = () => {
       try {
         const query = new URLSearchParams(filters).toString();
         const res = await axiosInstance.get(`/jobs?${query}`);
-        setJobs(res.data);
+        setJobs(res.data.jobs);
       } catch (err) {
         toast.error("Failed to fetch jobs", err);
       } finally {
@@ -111,6 +111,7 @@ const Dashboard = () => {
             <option value="Applied">Applied</option>
             <option value="Interview">Interview</option>
             <option value="Rejected">Rejected</option>
+            <option value="Offer">Offer</option>
           </select>
 
           <select
@@ -181,7 +182,7 @@ const Dashboard = () => {
         )}
 
         {/* Add Job Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-between">
           <Link
             to="/add-job"
             className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
@@ -189,10 +190,17 @@ const Dashboard = () => {
             <Plus size={18} />
             Add Job
           </Link>
+          {/* View Stats Button */}
+          <Link
+            to="/stats"
+            className="inline-flex items-center gap-2 bg-gray-100 text-gray-800 px-4 py-2 rounded-md border hover:bg-gray-200 transition"
+          >
+            📊 View Stats
+          </Link>
         </div>
 
         {/* Job List */}
-        <section className="grid grid-cols-1 gap-4">
+        <section className="grid grid-cols-1 gap-3">
           {loading ? (
             <div className="flex justify-center py-10 text-blue-500">
               <Loader2 className="animate-spin" size={28} />
@@ -203,39 +211,54 @@ const Dashboard = () => {
             jobs.map((job) => (
               <motion.div
                 key={job._id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="bg-white p-4 rounded-xl shadow hover:shadow-md transition"
+                transition={{ duration: 0.3 }}
+                className="bg-white border border-gray-200 px-4 py-3 rounded-lg shadow-sm hover:shadow-md transition"
               >
-                <h3 className="text-lg font-bold text-gray-800">
-                  {job.position} @ {job.company}
-                </h3>
-                <p className="text-sm text-gray-600">{job.location}</p>
-                <p className="text-sm text-gray-700 mt-1">
-                  <span className="font-medium">Type:</span> {job.jobType}
-                </p>
-                <p className="text-sm text-gray-700">
-                  <span className="font-medium">Status:</span> {job.status}
-                </p>
-                <p className="text-sm text-gray-500">
-                  <span className="font-medium text-gray-600">Posted:</span>{" "}
-                  {new Date(job.createdAt).toLocaleDateString()}
-                </p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-800">
+                      {job.position}{" "}
+                      <span className="text-gray-500 text-sm">
+                        @ {job.company}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {job.location} • {job.jobType} •{" "}
+                      {new Date(job.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      job.status === "Applied"
+                        ? "bg-blue-100 text-blue-800"
+                        : job.status === "Interview"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : job.status === "Rejected"
+                        ? "bg-red-100 text-red-800"
+                        : job.status === "Offer"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {job.status}
+                  </span>
+                </div>
 
-                <div className="mt-4 flex gap-2">
+                <div className="mt-3 flex gap-2 justify-start">
                   <button
                     onClick={() => navigate(`/edit-job/${job._id}`)}
-                    className="flex items-center gap-1 px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                   >
-                    <Pencil size={16} />
+                    <Pencil size={14} />
                     Edit
                   </button>
                   <button
                     onClick={() => openDeleteModal(job._id)}
-                    className="flex items-center gap-1 px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition"
+                    className="flex items-center gap-1 px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                     Delete
                   </button>
                 </div>
