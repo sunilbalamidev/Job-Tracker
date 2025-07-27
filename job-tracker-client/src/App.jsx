@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import ProtectedLayout from "./layouts/ProtectedLayout";
 import Stats from "./pages/Stats";
+import NotFound from "./pages/NotFound";
 
 const App = () => {
   return (
@@ -28,6 +29,14 @@ const App = () => {
         element={
           <PublicRoute>
             <Register />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="*"
+        element={
+          <PublicRoute>
+            <NotFound />
           </PublicRoute>
         }
       />

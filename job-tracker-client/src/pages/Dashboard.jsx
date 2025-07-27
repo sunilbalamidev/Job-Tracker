@@ -69,10 +69,10 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div className="min-h-screen bg-gray-50  text-gray-900 ">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Stats */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-xl shadow flex items-center gap-4">
             <Briefcase className="text-blue-500" />
             <div>
@@ -101,7 +101,7 @@ const Dashboard = () => {
         </section>
 
         {/* Filters */}
-        <div className="grid sm:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -182,18 +182,17 @@ const Dashboard = () => {
         )}
 
         {/* Add Job Button */}
-        <div className="flex justify-between">
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
           <Link
             to="/add-job"
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+            className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
           >
             <Plus size={18} />
             Add Job
           </Link>
-          {/* View Stats Button */}
           <Link
             to="/stats"
-            className="inline-flex items-center gap-2 bg-gray-100 text-gray-800 px-4 py-2 rounded-md border hover:bg-gray-200 transition"
+            className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-800 px-4 py-2 rounded-md border hover:bg-gray-200 transition"
           >
             📊 View Stats
           </Link>
@@ -216,7 +215,7 @@ const Dashboard = () => {
                 transition={{ duration: 0.3 }}
                 className="bg-white border border-gray-200 px-4 py-3 rounded-lg shadow-sm hover:shadow-md transition"
               >
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                   <div>
                     <h3 className="text-base font-semibold text-gray-800">
                       {job.position}{" "}
@@ -245,21 +244,18 @@ const Dashboard = () => {
                     {job.status}
                   </span>
                 </div>
-
-                <div className="mt-3 flex gap-2 justify-start">
+                <div className="mt-3 flex gap-2 flex-wrap">
                   <button
                     onClick={() => navigate(`/edit-job/${job._id}`)}
                     className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                   >
-                    <Pencil size={14} />
-                    Edit
+                    <Pencil size={14} /> Edit
                   </button>
                   <button
                     onClick={() => openDeleteModal(job._id)}
                     className="flex items-center gap-1 px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition"
                   >
-                    <Trash2 size={14} />
-                    Delete
+                    <Trash2 size={14} /> Delete
                   </button>
                 </div>
               </motion.div>
@@ -267,7 +263,6 @@ const Dashboard = () => {
           )}
         </section>
       </main>
-
       <ConfirmModal
         isOpen={modalOpen}
         onClose={closeModal}
