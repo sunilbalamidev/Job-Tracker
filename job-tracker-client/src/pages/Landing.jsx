@@ -1,20 +1,26 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import DarkModeToggle from "../components/DarkModeToggle"; // ✅ Make sure this exists
 
 const Landing = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white dark:from-gray-900 dark:to-gray-950 flex flex-col transition-colors duration-300">
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-6 shadow-sm bg-white">
-        <h1 className="text-2xl font-bold text-blue-700">JobTracker</h1>
-        <div className="space-x-4">
+      <header className="flex items-center justify-between px-8 py-6 shadow-sm bg-white dark:bg-gray-900">
+        <h1 className="text-2xl font-bold text-blue-700 dark:text-white">
+          JobTracker
+        </h1>
+        <div className="flex items-center gap-4">
+          <DarkModeToggle />
+
           <Link
             to="/login"
-            className="text-gray-700 font-medium hover:text-blue-700"
+            className="text-gray-700 dark:text-gray-300 font-medium hover:text-blue-700 dark:hover:text-yellow-400 transition"
           >
             Login
           </Link>
+
           <Link
             to="/register"
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
@@ -30,7 +36,7 @@ const Landing = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-4xl sm:text-5xl font-bold text-gray-800 mb-4"
+          className="text-4xl sm:text-5xl font-bold text-gray-800 dark:text-white mb-4"
         >
           Simplify Your Job Hunt
         </motion.h2>
@@ -39,7 +45,7 @@ const Landing = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8 }}
-          className="text-lg text-gray-600 max-w-xl mb-8"
+          className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mb-8"
         >
           Keep track of all your job applications in one place. Stay organized
           and focused on landing your dream job.
@@ -59,8 +65,8 @@ const Landing = () => {
         </motion.div>
       </main>
 
-      {/* Optional Footer */}
-      <footer className="text-center text-gray-400 text-sm py-4">
+      {/* Footer */}
+      <footer className="text-center text-gray-400 dark:text-gray-500 text-sm py-4">
         © {new Date().getFullYear()} JobTracker. All rights reserved.
       </footer>
     </div>
