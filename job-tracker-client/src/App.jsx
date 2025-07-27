@@ -4,38 +4,48 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import AddJob from "./pages/AddJob";
+import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
+import ProtectedLayout from "./layouts/ProtectedLayout";
+import Stats from "./pages/Stats";
 
 const App = () => {
   return (
     <Routes>
+      {/* Public Routes */}
       <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
       <Route
-        path="/dashboard"
+        path="/login"
         element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
         }
       />
       <Route
-        path="/add-job"
+        path="/register"
         element={
-          <ProtectedRoute>
-            <AddJob />
-          </ProtectedRoute>
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
         }
       />
+
+      {/* Protected Routes with Layout */}
       <Route
-        path="/edit-job/:id"
         element={
           <ProtectedRoute>
-            <AddJob />
+            <ProtectedLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/add-job" element={<AddJob />} />
+        <Route path="/edit-job/:id" element={<AddJob />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/stats" element={<Stats />} />
+      </Route>
     </Routes>
   );
 };

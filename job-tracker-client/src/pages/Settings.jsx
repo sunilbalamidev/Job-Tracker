@@ -1,98 +1,167 @@
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import axiosInstance from "../api/axious";
+import { toast } from "react-toastify";
+import { motion } from "framer-motion";
 
-function Settings() {
+// ✅ NEW: Import the custom modal
+import ConfirmModal from "../components/ConfirmModal";
+
+const Settings = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const [name, setName] = useState(user?.name || "");
+  const [email] = useState(user?.email || "");
+  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
-  const handleLogout = () => {
-    logout();
-    toast.success("Logged out successfully");
-    navigate("/login");
+  // ✅ NEW: Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    // Real API
+    try {
+      await axiosInstance.put("/users/update-profile", { name });
+      toast.success("Profile updated!");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to update profile");
+    }
+    const updatedUser = { ...user, name };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    window.location.reload();
   };
-  const handleDeleteAccount = async () => {
-    const confirm = window.confirm(
-      "Are you sure? This will permanently delete your account."
-    );
-    if (!confirm) return;
 
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    try {
+      await axiosInstance.put("/users/update-password", {
+        oldPassword: password,
+        newPassword,
+      });
+      toast.success("Password updated!");
+      setPassword("");
+      setNewPassword("");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Failed to update password");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
     try {
       await axiosInstance.delete("/users/delete");
-      logout(); // clear auth
-      toast.success("Your account has been deleted.");
-      navigate("/register");
+      logout();
+      toast.success("Account deleted");
     } catch (err) {
-      toast.error("Failed to delete account.");
-      console.error(err.response?.data || err.message);
+      toast.error("Failed to delete account", err);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="max-w-xl w-full bg-white p-8 rounded-xl shadow-md">
-        {/* Page Title */}
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
-          Account Settings
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-3xl mx-auto px-4 py-10"
+    >
+      <h1 className="text-3xl font-bold mb-6 text-blue-600">Settings</h1>
+
+      {/* Profile Info */}
+      <section className="bg-white shadow rounded-xl p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">
+          Profile Info
         </h2>
-
-        {/* 1. User Info Section */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold mb-2 text-gray-700">
-            Account Info
-          </h3>
-          <p>
-            <strong>Name:</strong> {user?.name}
-          </p>
-          <p>
-            <strong>Email:</strong> {user?.email}
-          </p>
-          <p>
-            <strong>Member Since:</strong>{" "}
-            {user?.createdAt
-              ? new Date(user.createdAt).toLocaleDateString()
-              : "N/A"}
-          </p>
-        </div>
-
-        {/* 2. Change Password Stub */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold mb-2 text-gray-700">
-            Change Password
-          </h3>
-          <p className="text-sm text-gray-500 mb-2">Feature coming soon.</p>
-          <button className="bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600 transition">
-            Change Password
-          </button>
-        </div>
-
-        {/* 3. Danger Zone - Delete Account Stub */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold mb-2 text-gray-700">
-            Danger Zone
-          </h3>
-          <p className="text-sm text-gray-500 mb-2">
-            This will permanently delete your account.
-          </p>
+        <form onSubmit={handleUpdateProfile} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              disabled
+              className="w-full px-4 py-2 border bg-gray-100 rounded-lg"
+            />
+          </div>
           <button
-            className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition"
-            onClick={handleDeleteAccount}
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
           >
-            Delete My Account
+            Update Profile
           </button>
-        </div>
+        </form>
+      </section>
 
-        {/* 4. Logout Button */}
+      {/* Change Password */}
+      <section className="bg-white shadow rounded-xl p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4 text-gray-800">
+          Change Password
+        </h2>
+        <form onSubmit={handleChangePassword} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              Current Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">
+              New Password
+            </label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            type="submit"
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            Change Password
+          </button>
+        </form>
+      </section>
+
+      {/* Danger Zone */}
+      <section className="bg-white shadow rounded-xl p-6">
+        <h2 className="text-xl font-semibold mb-4 text-red-600">Danger Zone</h2>
+        <p className="text-gray-600 mb-4">
+          Permanently delete your account and all associated data.
+        </p>
+        {/* ✅ MODIFIED: Opens modal instead of window.confirm */}
         <button
-          onClick={handleLogout}
-          className="w-full bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-900 transition"
+          onClick={() => setModalOpen(true)}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
         >
-          Logout
+          Delete Account
         </button>
-      </div>
-    </div>
+      </section>
+
+      {/* ✅ NEW: Custom confirmation modal */}
+      <ConfirmModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirm={handleDeleteAccount}
+        message="Are you sure you want to permanently delete your account and all your jobs?"
+      />
+    </motion.div>
   );
-}
+};
 
 export default Settings;

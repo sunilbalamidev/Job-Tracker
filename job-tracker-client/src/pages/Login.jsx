@@ -6,12 +6,17 @@ import axiosInstance from "../api/axious";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 
+// ✅ Google OAuth
+import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // ✅ Email/password login handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -22,6 +27,33 @@ function Login() {
       navigate("/dashboard");
     } catch (err) {
       toast.error(err.response?.data?.error || "Login failed");
+    }
+  };
+
+  // ✅ Google OAuth login handler
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      const { credential } = credentialResponse;
+
+      if (!credential) {
+        toast.error("Google login failed: No credential received");
+        return;
+      }
+
+      const decoded = jwtDecode(credential);
+      console.log("Google user:", decoded);
+
+      const res = await axiosInstance.post("/auth/google/token", {
+        token: credential,
+      });
+
+      const { token, user } = res.data;
+      login(user, token);
+      toast.success("Logged in with Google!");
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Google login error:", err);
+      toast.error("Google login failed");
     }
   };
 
@@ -40,6 +72,8 @@ function Login() {
         <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">
           Welcome Back
         </h2>
+
+        {/* Email/Password Login Form */}
         <form className="space-y-5" onSubmit={handleSubmit}>
           <div>
             <label className="text-sm text-gray-700 block mb-1">Email</label>
@@ -70,6 +104,17 @@ function Login() {
             Login
           </button>
         </form>
+
+        {/* Google Login */}
+        <div className="my-6 text-center">
+          <p className="text-gray-500 mb-3">or</p>
+          <GoogleLogin
+            onSuccess={handleGoogleLogin}
+            onError={() => toast.error("Google login failed")}
+            width="100%"
+          />
+        </div>
+
         <p className="text-sm text-center mt-4 text-gray-600">
           Don’t have an account?{" "}
           <Link
