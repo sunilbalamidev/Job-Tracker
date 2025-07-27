@@ -13,12 +13,15 @@ import {
 } from "chart.js";
 import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 const Stats = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -60,6 +63,14 @@ const Stats = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+        >
+          <ArrowLeft size={20} /> Go Back
+        </button>
+      </div>
       <h1 className="text-2xl font-bold text-gray-800 mb-6">
         📊 Job Statistics
       </h1>

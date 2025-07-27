@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import axiosInstance from "../api/axious";
 import { Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const initialForm = {
   position: "",
@@ -76,9 +77,22 @@ const AddJob = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow mt-8">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        {id ? "Edit Job" : "Add New Job"}
-      </h2>
+      {/* Page Title */}
+      <div className="flex justify-between">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">
+          {id ? "Edit Job" : "Add New Job"}
+        </h2>
+        <div className="mb-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+          >
+            <ArrowLeft size={20} /> Go Back
+          </button>
+        </div>
+      </div>
+
+      {/* Form */}
       <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-5">
         <div>
           <label className="block text-sm font-medium text-gray-700">
