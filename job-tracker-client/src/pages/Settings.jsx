@@ -3,6 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axious";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 // ✅ NEW: Import the custom modal
 import ConfirmModal from "../components/ConfirmModal";
@@ -13,7 +15,7 @@ const Settings = () => {
   const [email] = useState(user?.email || "");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-
+  const navigate = useNavigate();
   // ✅ NEW: Modal state
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -62,7 +64,15 @@ const Settings = () => {
       animate={{ opacity: 1 }}
       className="max-w-3xl mx-auto px-4 py-10"
     >
-      <h1 className="text-3xl font-bold mb-6 text-blue-600">Settings</h1>
+      <div className="flex justify-between">
+        <h1 className="text-3xl font-bold mb-6 text-blue-600">Settings</h1>
+        <button
+          onClick={() => navigate(-1)}
+          className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+        >
+          <ArrowLeft size={20} /> Go Back
+        </button>
+      </div>
 
       {/* Profile Info */}
       <section className="bg-white shadow rounded-xl p-6 mb-6">
