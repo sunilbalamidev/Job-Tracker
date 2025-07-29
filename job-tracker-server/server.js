@@ -10,7 +10,7 @@ import passport from "passport";
 import jobRoutes from "./routes/jobRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import googleAuthRoutes form "./routes/auth.js";
+import googleAuthRoutes from "./routes/auth.js";
 
 // Passport config (must be imported after passport)
 import "./config/passport.js";
