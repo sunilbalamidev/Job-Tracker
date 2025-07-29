@@ -10,6 +10,7 @@ import passport from "passport";
 import jobRoutes from "./routes/jobRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import googleAuthRoutes form "./routes/auth.js";
 
 // Passport config (must be imported after passport)
 import "./config/passport.js";
@@ -44,6 +45,7 @@ app.use(passport.session());
 app.use("/api", jobRoutes); // Jobs CRUD
 app.use("/api/auth", authRoutes); // Auth, including Google OAuth
 app.use("/api/users", userRoutes); // User settings
+app.use("/api/auth", googleAuthRoutes); // Google OAuth routes
 
 // -----------------------------
 // 🔗 MongoDB Connection

@@ -1,15 +1,16 @@
-const express = require("express");
-const router = express.Router();
-const passport = require("passport");
-const jwt = require("jsonwebtoken");
+import express from "express";
+import passport from "passport";
+import jwt from "jsonwebtoken";
 
-// Start OAuth flow
+const router = express.Router();
+
+// 🌐 Start Google OAuth
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Callback after Google login
+// 🔁 Google OAuth callback
 router.get(
   "/google/callback",
   passport.authenticate("google", {
@@ -17,19 +18,16 @@ router.get(
     session: false,
   }),
   (req, res) => {
-    // Generate JWT
     const token = jwt.sign(
       { id: req.user._id, name: req.user.name },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
-      }
+      { expiresIn: "1d" }
     );
 
-    // Send token as redirect or JSON (choose one)
-    res.redirect(`http://localhost:5173/login?token=${token}`);
-    // OR res.json({ token });
+    // Replace this with your deployed frontend URL
+    res.redirect(`https://your-frontend.vercel.app/login?token=${token}`);
+    // Or: res.json({ token });
   }
 );
 
-module.exports = router;
+export default router;
