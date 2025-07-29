@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -11,7 +10,7 @@ import jobRoutes from "./routes/jobRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
-// Passport config (must be imported after passport)
+// ✅ Correct Passport config file
 import "./config/passport.js";
 
 // Load environment variables
@@ -23,27 +22,41 @@ const app = express();
 // -----------------------------
 // 🌐 Middleware
 // -----------------------------
-app.use(cors());
+
+// ✅ CORS setup (allows cookies/session from frontend)
+app.use(
+  cors({
+    origin: true, // later replace with "https://your-frontend.vercel.app"
+    credentials: true,
+  })
+);
+
+// Parses incoming JSON
 app.use(express.json());
 
-// ⚠️ Session must come before passport middleware
+// ✅ Session setup (needed before passport)
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "keyboard cat",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+    },
   })
 );
 
+// ✅ Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
 // -----------------------------
 // 🛣️ API Routes
 // -----------------------------
-app.use("/api", jobRoutes); // Jobs CRUD
-app.use("/api/auth", authRoutes); // Auth, including Google OAuth
-app.use("/api/users", userRoutes); // User settings
+app.use("/api", jobRoutes); // Job CRUD
+app.use("/api/auth", authRoutes); // Auth, incl. Google OAuth
+app.use("/api/users", userRoutes); // User profile, delete
 
 // -----------------------------
 // 🔗 MongoDB Connection
@@ -57,7 +70,7 @@ mongoose
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // -----------------------------
-// 🧪 Test Route
+// 🧪 Root Route
 // -----------------------------
 app.get("/", (req, res) => {
   res.send("Job Tracker API is running...");
