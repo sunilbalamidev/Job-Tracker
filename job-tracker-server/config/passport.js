@@ -1,85 +1,41 @@
-import express from "express";
-import cors from "cors";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
-import session from "express-session";
 import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import dotenv from "dotenv";
+import User from "../models/User.js"; // ✅ correct
 
-// Route imports
-import jobRoutes from "./routes/jobRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-
-// ✅ Correct Passport config file
-import "./config/passport.js";
-
-// Load environment variables
 dotenv.config();
 
-// Initialize app
-const app = express();
-
-// -----------------------------
-// 🌐 Middleware
-// -----------------------------
-
-// ✅ CORS setup (allows cookies/session from frontend)
-app.use(
-  cors({
-    origin: true, // later replace with "https://your-frontend.vercel.app"
-    credentials: true,
-  })
-);
-
-// Parses incoming JSON
-app.use(express.json());
-
-// ✅ Session setup (needed before passport)
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "keyboard cat",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
+// Google strategy setup
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
     },
-  })
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        let user = await User.findOne({ googleId: profile.id });
+        if (!user) {
+          user = await User.create({
+            googleId: profile.id,
+            name: profile.displayName,
+            email: profile.emails[0].value,
+          });
+        }
+        return done(null, user);
+      } catch (err) {
+        return done(err, null);
+      }
+    }
+  )
 );
 
-// ✅ Passport middleware
-app.use(passport.initialize());
-app.use(passport.session());
-
-// -----------------------------
-// 🛣️ API Routes
-// -----------------------------
-app.use("/api", jobRoutes); // Job CRUD
-app.use("/api/auth", authRoutes); // Auth, incl. Google OAuth
-app.use("/api/users", userRoutes); // User profile, delete
-
-// -----------------------------
-// 🔗 MongoDB Connection
-// -----------------------------
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
-
-// -----------------------------
-// 🧪 Root Route
-// -----------------------------
-app.get("/", (req, res) => {
-  res.send("Job Tracker API is running...");
+passport.serializeUser((user, done) => {
+  done(null, user.id);
 });
 
-// -----------------------------
-// 🚀 Start Server
-// -----------------------------
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server started on port ${PORT}`);
+passport.deserializeUser(async (id, done) => {
+  const user = await User.findById(id);
+  done(null, user);
 });
