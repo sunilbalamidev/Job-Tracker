@@ -3,6 +3,7 @@ import axiosInstance from "../api/axious";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 function Register() {
   const [name, setName] = useState("");
@@ -83,6 +84,9 @@ function Register() {
           </button>
         </form>
         <p className="text-sm text-center mt-4 text-gray-600">
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Login
+          </Link>{" "}
           Already have an account?
           <a href="/login" className="text-blue-600 hover:underline">
             Login
