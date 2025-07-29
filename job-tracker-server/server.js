@@ -5,7 +5,6 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import session from "express-session";
 import passport from "passport";
-
 // Route imports
 import jobRoutes from "./routes/jobRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -45,7 +44,7 @@ app.use(passport.session());
 app.use("/api", jobRoutes); // Jobs CRUD
 app.use("/api/auth", authRoutes); // Auth, including Google OAuth
 app.use("/api/users", userRoutes); // User settings
-app.use("/api/auth", googleAuthRoutes); // Google OAuth routes
+app.use("/api/auth", googleAuthRoutes); // Google` OAuth routes
 
 // -----------------------------
 // 🔗 MongoDB Connection
