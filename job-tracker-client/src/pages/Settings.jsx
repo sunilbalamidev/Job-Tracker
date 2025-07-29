@@ -5,32 +5,29 @@ import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-
-// ✅ NEW: Import the custom modal
 import ConfirmModal from "../components/ConfirmModal";
 
 const Settings = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [name, setName] = useState(user?.name || "");
   const [email] = useState(user?.email || "");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const navigate = useNavigate();
-  // ✅ NEW: Modal state
   const [modalOpen, setModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    // Real API
     try {
       await axiosInstance.put("/users/update-profile", { name });
+
+      const updatedUser = { ...user, name };
+      updateUser(updatedUser); // ✅ update context + localStorage
+
       toast.success("Profile updated!");
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to update profile");
     }
-    const updatedUser = { ...user, name };
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    window.location.reload();
   };
 
   const handleChangePassword = async (e) => {
@@ -154,7 +151,6 @@ const Settings = () => {
         <p className="text-gray-600 mb-4">
           Permanently delete your account and all associated data.
         </p>
-        {/* ✅ MODIFIED: Opens modal instead of window.confirm */}
         <button
           onClick={() => setModalOpen(true)}
           className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
@@ -163,7 +159,7 @@ const Settings = () => {
         </button>
       </section>
 
-      {/* ✅ NEW: Custom confirmation modal */}
+      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
