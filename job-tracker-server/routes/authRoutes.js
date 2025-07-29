@@ -1,4 +1,3 @@
-// routes/authRoutes.js
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
 import jwt from "jsonwebtoken";
@@ -6,6 +5,10 @@ import User from "../models/User.js";
 
 const router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// ==============================
+// 🔐 Regular Authentication
+// ==============================
 
 // ✅ REGISTER
 router.post("/register", async (req, res) => {
@@ -34,6 +37,7 @@ router.post("/register", async (req, res) => {
       token,
     });
   } catch (err) {
+    console.error("Registration error:", err);
     res.status(500).json({ error: "Server error during registration" });
   }
 });
@@ -72,38 +76,36 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ✅ GOOGLE TOKEN LOGIN
+// ==============================
+// 🔒 Google OAuth Token Login
+// ==============================
+
 router.post("/google/token", async (req, res) => {
-  const { token } = req.body;
+  const { token: googleToken } = req.body;
 
   try {
-    // Verify the token
     const ticket = await client.verifyIdToken({
-      idToken: token,
+      idToken: googleToken,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
     const { email, name, sub: googleId } = payload;
 
-    // Check if user exists
     let user = await User.findOne({ googleId });
 
     if (!user) {
-      // Fallback: Try by email (if user registered via email before)
+      // Check if user exists by email (from regular signup)
       user = await User.findOne({ email });
 
       if (user) {
-        // Link Google account to existing user
         user.googleId = googleId;
         await user.save();
       } else {
-        // Create new user
         user = await User.create({ name, email, googleId });
       }
     }
 
-    // Issue JWT
     const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });

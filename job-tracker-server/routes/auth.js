@@ -4,13 +4,13 @@ import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-// 🌐 Start Google OAuth
+// Step 1: Start Google OAuth flow
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// 🔁 Google OAuth callback
+// Step 2: Handle Google callback
 router.get(
   "/google/callback",
   passport.authenticate("google", {
@@ -24,9 +24,10 @@ router.get(
       { expiresIn: "1d" }
     );
 
-    // Replace this with your deployed frontend URL
-    res.redirect(`https://your-frontend.vercel.app/login?token=${token}`);
-    // Or: res.json({ token });
+    // Redirect to deployed frontend
+    res.redirect(
+      `https://job-tracker-client-cqyn.onrender.com/login?token=${token}`
+    );
   }
 );
 
