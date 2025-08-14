@@ -54,7 +54,7 @@ router.get("/jobs", verifyToken, async (req, res) => {
       sort = "latest",
       search = "",
       page = 1,
-      limit = 10,
+      limit = 50,
     } = req.query;
 
     const queryObject = { createdBy: userId };
