@@ -1,14 +1,17 @@
-// client/src/components/ProtectedRoute.jsx
-import { Navigate } from "react-router-dom";
-import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { demo } from "../services/jobService";
 
-const ProtectedRoute = ({ children }) => {
-  const { user } = useContext(AuthContext);
+export default function ProtectedRoute({ children }) {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // ✅ Allow demo mode without auth
+  if (demo.isEnabled()) return children;
+
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
-  return children;
-};
 
-export default ProtectedRoute;
+  return children;
+}

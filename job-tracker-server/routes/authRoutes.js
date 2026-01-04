@@ -4,47 +4,71 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 const router = express.Router();
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// ==============================
-// 🔐 Regular Authentication
-// ==============================
+/**
+ * Helpers
+ */
+const safeEmail = (email) => (email || "").trim().toLowerCase();
 
-// ✅ REGISTER
+/**
+ * Always read JWT_SECRET at runtime (IMPORTANT)
+ */
+const signToken = (userId) => {
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET not configured");
+  }
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "1d" });
+};
+
+/**
+ * POST /api/auth/register
+ */
 router.post("/register", async (req, res) => {
-  const { name, email, password } = req.body;
+  const name = (req.body.name || "").trim();
+  const email = safeEmail(req.body.email);
+  const password = req.body.password;
+
+  if (!name || !email || !password) {
+    return res
+      .status(400)
+      .json({ error: "Name, email, and password are required" });
+  }
 
   try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    const existing = await User.findOne({ email });
+    if (existing) {
       return res.status(400).json({ error: "Email already in use" });
     }
 
-    const newUser = new User({ name, email, password });
-    await newUser.save();
+    const user = await User.create({ name, email, password });
+    const token = signToken(user._id);
 
-    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-
-    res.status(201).json({
+    return res.status(201).json({
       message: "User registered successfully",
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-      },
+      user: { id: user._id, name: user.name, email: user.email },
       token,
     });
   } catch (err) {
     console.error("Registration error:", err);
-    res.status(500).json({ error: "Server error during registration" });
+
+    return res.status(500).json({
+      error: "Server error during registration",
+      details: err.message,
+    });
   }
 });
 
-// ✅ LOGIN
+/**
+ * POST /api/auth/login
+ */
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const email = safeEmail(req.body.email);
+  const password = req.body.password;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
 
   try {
     const user = await User.findOne({ email }).select("+password");
@@ -52,76 +76,89 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid email or password" });
     }
 
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
+    const ok = await user.comparePassword(password);
+    if (!ok) {
       return res.status(400).json({ error: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = signToken(user._id);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Login successful",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user: { id: user._id, name: user.name, email: user.email },
       token,
     });
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ error: "Server error during login" });
+
+    return res.status(500).json({
+      error: "Server error during login",
+      details: err.message,
+    });
   }
 });
 
-// ==============================
-// 🔒 Google OAuth Token Login
-// ==============================
-
+/**
+ * POST /api/auth/google/token
+ * body: { token: "<google_id_token>" }
+ */
 router.post("/google/token", async (req, res) => {
-  const { token: googleToken } = req.body;
+  const googleToken = req.body?.token;
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+
+  if (!GOOGLE_CLIENT_ID) {
+    return res.status(500).json({ error: "Google login not configured" });
+  }
+
+  if (!googleToken) {
+    return res.status(400).json({ error: "Google token is required" });
+  }
 
   try {
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+
     const ticket = await client.verifyIdToken({
       idToken: googleToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
-    const { email, name, sub: googleId } = payload;
+    const email = safeEmail(payload?.email);
+    const name = (payload?.name || "").trim();
+    const googleId = payload?.sub;
 
-    let user = await User.findOne({ googleId });
-
-    if (!user) {
-      // Check if user exists by email (from regular signup)
-      user = await User.findOne({ email });
-
-      if (user) {
-        user.googleId = googleId;
-        await user.save();
-      } else {
-        user = await User.create({ name, email, googleId });
-      }
+    if (!email || !googleId) {
+      return res.status(401).json({ error: "Invalid Google token payload" });
     }
 
-    const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    let user = await User.findOne({ email });
 
-    res.status(200).json({
+    if (!user) {
+      user = await User.create({
+        name: name || "Google User",
+        email,
+        googleId,
+      });
+    } else if (!user.googleId) {
+      user.googleId = googleId;
+      if (!user.name && name) user.name = name;
+      await user.save();
+    }
+
+    const token = signToken(user._id);
+
+    return res.status(200).json({
       message: "Google login successful",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
-      token: jwtToken,
+      user: { id: user._id, name: user.name, email: user.email },
+      token,
     });
   } catch (err) {
     console.error("Google token login error:", err);
-    res.status(401).json({ error: "Invalid Google token" });
+
+    return res.status(401).json({
+      error: "Invalid Google token",
+      details: err.message,
+    });
   }
 });
 

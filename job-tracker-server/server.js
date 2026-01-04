@@ -1,73 +1,61 @@
-// server.js
+import dotenv from "dotenv";
+dotenv.config();
+console.log("JWT_SECRET loaded?", !!process.env.JWT_SECRET);
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-import session from "express-session";
-import passport from "passport";
-// Route imports
-import jobRoutes from "./routes/jobRoutes.js";
+
 import authRoutes from "./routes/authRoutes.js";
+import jobRoutes from "./routes/jobRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import googleAuthRoutes from "./routes/auth.js";
 
-// Passport config (must be imported after passport)
-import "./config/passport.js";
-
-// Load environment variables
-dotenv.config();
-
-// Initialize app
 const app = express();
 
-// -----------------------------
-// 🌐 Middleware
-// -----------------------------
-app.use(cors());
+/**
+ * Middleware
+ */
 app.use(express.json());
 
-// ⚠️ Session must come before passport middleware
 app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "keyboard cat",
-    resave: false,
-    saveUninitialized: true,
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
   })
 );
 
-app.use(passport.initialize());
-app.use(passport.session());
-
-// -----------------------------
-// 🛣️ API Routes
-// -----------------------------
-app.use("/api", jobRoutes); // Jobs CRUD
-app.use("/api/auth", authRoutes); // Auth, including Google OAuth
-app.use("/api/users", userRoutes); // User settings
-app.use("/api/auth", googleAuthRoutes); // Google` OAuth routes
-
-// -----------------------------
-// 🔗 MongoDB Connection
-// -----------------------------
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
-
-// -----------------------------
-// 🧪 Test Route
-// -----------------------------
+/**
+ * Routes
+ */
 app.get("/", (req, res) => {
   res.send("Job Tracker API is running...");
 });
 
-// -----------------------------
-// 🚀 Start Server
-// -----------------------------
+app.use("/api/auth", authRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/users", userRoutes);
+
+/**
+ * Start
+ */
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server started on port ${PORT}`);
-});
+
+const start = async () => {
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is missing in environment variables.");
+    }
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is missing in environment variables.");
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("✅ MongoDB connected");
+
+    app.listen(PORT, () => console.log(`🚀 Server started on port ${PORT}`));
+  } catch (err) {
+    console.error("❌ Server start error:", err.message);
+    process.exit(1);
+  }
+};
+
+start();

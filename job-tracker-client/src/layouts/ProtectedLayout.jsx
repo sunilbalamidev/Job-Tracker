@@ -1,54 +1,109 @@
-// src/layouts/ProtectedLayout.jsx
-import { Outlet } from "react-router-dom";
-import { LogOut, Layers3, Cog } from "lucide-react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Plus,
+  BarChart3,
+  Settings as SettingsIcon,
+  LogOut,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { demo } from "../services/jobService";
 
-const ProtectedLayout = () => {
+const linkClass = ({ isActive }) =>
+  [
+    "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition border",
+    isActive
+      ? "bg-white border-gray-200 text-gray-900"
+      : "bg-transparent border-transparent text-gray-600 hover:bg-white hover:border-gray-200",
+  ].join(" ");
+
+export default function ProtectedLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const onLogout = () => {
+    // demo logout just disables demo
+    if (demo.isEnabled()) {
+      demo.disable({ clear: false });
+      navigate("/", { replace: true });
+      return;
+    }
+
     logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
+  const title = demo.isEnabled()
+    ? "Demo mode"
+    : user?.name
+    ? `Welcome, ${user.name}`
+    : "Welcome";
+
+  const subtitle = demo.isEnabled()
+    ? "Data is saved in your browser only."
+    : "Your jobs are saved to the database.";
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header/Navbar */}
-      <header className="flex items-center justify-between p-4 shadow bg-white sticky top-0 z-20">
-        <Link
-          to="/dashboard"
-          className="flex items-center gap-2 text-xl font-bold text-blue-600"
-        >
-          <Layers3 />
-          JobTracker
-        </Link>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-700 hidden sm:block">👋 {user?.name}</span>
-          <Link
-            to="/settings"
-            className="flex items-center gap-1 text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md transition"
-          >
-            <Cog size={16} />
-            Settings
-          </Link>
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      <div className="mx-auto max-w-7xl px-4 py-6">
+        {/* Top bar */}
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <div className="text-sm text-gray-500">Job Tracker</div>
+            <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+            <div className="text-xs text-gray-500">{subtitle}</div>
+          </div>
+
           <button
-            onClick={handleLogout}
-            className="flex items-center gap-1 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+            onClick={onLogout}
+            className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-100"
           >
-            <LogOut size={18} />
-            Logout
+            <LogOut size={16} />
+            {demo.isEnabled() ? "Exit demo" : "Logout"}
           </button>
         </div>
-      </header>
 
-      {/* Protected Pages Render Here */}
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        <Outlet />
-      </main>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr]">
+          {/* Sidebar */}
+          <aside className="h-fit rounded-lg border border-gray-200 bg-white p-2">
+            <nav className="flex flex-col gap-1">
+              <NavLink to="/dashboard" className={linkClass}>
+                <LayoutDashboard size={16} />
+                Dashboard
+              </NavLink>
+              <NavLink to="/add-job" className={linkClass}>
+                <Plus size={16} />
+                Add job
+              </NavLink>
+              <NavLink to="/stats" className={linkClass}>
+                <BarChart3 size={16} />
+                Stats
+              </NavLink>
+
+              {!demo.isEnabled() && (
+                <NavLink to="/settings" className={linkClass}>
+                  <SettingsIcon size={16} />
+                  Settings
+                </NavLink>
+              )}
+            </nav>
+
+            <div className="mt-3 border-t border-gray-100 pt-3 px-2">
+              <div className="text-xs text-gray-500">
+                {demo.isEnabled() ? "Mode" : "Signed in as"}
+              </div>
+              <div className="text-sm font-medium truncate">
+                {demo.isEnabled() ? "demo@local" : user?.email}
+              </div>
+            </div>
+          </aside>
+
+          {/* Content */}
+          <section className="rounded-lg border border-gray-200 bg-white p-4 md:p-6">
+            <Outlet />
+          </section>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default ProtectedLayout;
+}

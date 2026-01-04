@@ -14,45 +14,34 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        "Please enter a valid email",
-      ],
     },
     password: {
       type: String,
       minlength: 6,
-      select: false, // 👈 Prevents password from being returned in queries by default
+      select: false, // not returned by default
     },
     googleId: {
       type: String,
       unique: true,
-      sparse: true, // Allows multiple docs without googleId
+      sparse: true, // allows many users without googleId
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// 🔐 Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password") || !this.password) return next();
-
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    next();
+    return next();
   } catch (err) {
-    next(err);
+    return next(err);
   }
 });
 
-// ✅ Method to compare plain password with hashed one
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
-const User = mongoose.model("User", userSchema);
-
-export default User;
+export default mongoose.model("User", userSchema);

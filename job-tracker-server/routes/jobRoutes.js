@@ -1,12 +1,14 @@
 import express from "express";
-import mongoose from "mongoose"; // ✅ Required for ObjectId conversion
+import mongoose from "mongoose";
 import Job from "../models/Job.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();
 
-// ✅ Get job stats by status (for charts)
-router.get("/jobs/stats", verifyToken, async (req, res) => {
+/**
+ * GET /api/jobs/stats
+ */
+router.get("/stats", verifyToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
@@ -15,39 +17,39 @@ router.get("/jobs/stats", verifyToken, async (req, res) => {
       { $group: { _id: "$status", count: { $sum: 1 } } },
     ]);
 
-    const defaultStats = {
-      Applied: 0,
-      Interview: 0,
-      Rejected: 0,
-      Offer: 0,
-    };
-
-    stats.forEach((stat) => {
-      defaultStats[stat._id] = stat.count;
+    const out = { Applied: 0, Interview: 0, Rejected: 0, Offer: 0 };
+    stats.forEach((s) => {
+      if (out[s._id] !== undefined) out[s._id] = s.count;
     });
 
-    res.status(200).json(defaultStats);
+    return res.status(200).json(out);
   } catch (err) {
     console.error("Stats Error:", err);
-    res.status(500).json({ error: "Failed to fetch stats" });
+    return res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
-// ✅ Create a new job
-router.post("/jobs", verifyToken, async (req, res) => {
+/**
+ * POST /api/jobs
+ */
+router.post("/", verifyToken, async (req, res) => {
   try {
     const userId = req.user.userId;
     const job = await Job.create({ ...req.body, createdBy: userId });
-    res.status(201).json(job);
+    return res.status(201).json(job);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    return res.status(400).json({ error: err.message });
   }
 });
 
-// ✅ Get all jobs with filters, search, sort, and pagination
-router.get("/jobs", verifyToken, async (req, res) => {
+/**
+ * GET /api/jobs
+ * query: status, jobType, sort, search, page, limit
+ */
+router.get("/", verifyToken, async (req, res) => {
   try {
     const userId = req.user.userId;
+
     const {
       status = "all",
       jobType = "all",
@@ -59,102 +61,96 @@ router.get("/jobs", verifyToken, async (req, res) => {
 
     const queryObject = { createdBy: userId };
 
-    if (status !== "all") {
-      queryObject.status = status;
-    }
+    if (status !== "all") queryObject.status = status;
+    if (jobType !== "all") queryObject.jobType = jobType;
 
-    if (jobType !== "all") {
-      queryObject.jobType =
-        jobType.charAt(0).toUpperCase() + jobType.slice(1).toLowerCase();
-    }
-
-    if (search) {
+    if (search?.trim()) {
+      const s = search.trim();
       queryObject.$or = [
-        { position: { $regex: search, $options: "i" } },
-        { company: { $regex: search, $options: "i" } },
+        { position: { $regex: s, $options: "i" } },
+        { company: { $regex: s, $options: "i" } },
       ];
     }
 
     let result = Job.find(queryObject);
 
-    // Sorting
     if (sort === "latest") result = result.sort("-createdAt");
     else if (sort === "oldest") result = result.sort("createdAt");
     else if (sort === "a-z") result = result.sort("position");
     else if (sort === "z-a") result = result.sort("-position");
 
-    // Pagination
-    const skip = (Number(page) - 1) * Number(limit);
-    result = result.skip(skip).limit(Number(limit));
+    const safeLimit = Math.max(1, Number(limit) || 50);
+    const safePage = Math.max(1, Number(page) || 1);
+    const skip = (safePage - 1) * safeLimit;
 
     const totalJobs = await Job.countDocuments(queryObject);
-    const jobs = await result;
-    const numOfPages = Math.ceil(totalJobs / limit);
+    const jobs = await result.skip(skip).limit(safeLimit);
+    const numOfPages = Math.ceil(totalJobs / safeLimit) || 0;
 
-    res.status(200).json({
+    return res.status(200).json({
       jobs,
       totalJobs,
       numOfPages,
-      currentPage: Number(page),
+      currentPage: safePage,
     });
   } catch (err) {
     console.error("Fetch Jobs Error:", err);
-    res.status(500).json({ error: "Failed to fetch jobs" });
+    return res.status(500).json({ error: "Failed to fetch jobs" });
   }
 });
 
-// ✅ Get a single job by ID
-router.get("/jobs/:id", verifyToken, async (req, res) => {
+/**
+ * GET /api/jobs/:id
+ */
+router.get("/:id", verifyToken, async (req, res) => {
   try {
     const job = await Job.findOne({
       _id: req.params.id,
       createdBy: req.user.userId,
     });
 
-    if (!job) {
-      return res.status(404).json({ error: "Job not found or access denied" });
-    }
+    if (!job) return res.status(404).json({ error: "Job not found" });
 
-    res.status(200).json(job);
+    return res.status(200).json(job);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Update a job
-router.put("/jobs/:id", verifyToken, async (req, res) => {
+/**
+ * PUT /api/jobs/:id
+ */
+router.put("/:id", verifyToken, async (req, res) => {
   try {
-    const updatedJob = await Job.findOneAndUpdate(
+    const updated = await Job.findOneAndUpdate(
       { _id: req.params.id, createdBy: req.user.userId },
       req.body,
       { new: true, runValidators: true }
     );
 
-    if (!updatedJob) {
-      return res.status(404).json({ error: "Job not found or access denied" });
-    }
+    if (!updated) return res.status(404).json({ error: "Job not found" });
 
-    res.status(200).json(updatedJob);
+    return res.status(200).json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Delete a job
-router.delete("/jobs/:id", verifyToken, async (req, res) => {
+/**
+ * DELETE /api/jobs/:id
+ */
+router.delete("/:id", verifyToken, async (req, res) => {
   try {
-    const deletedJob = await Job.findOneAndDelete({
+    const deleted = await Job.findOneAndDelete({
       _id: req.params.id,
       createdBy: req.user.userId,
     });
 
-    if (!deletedJob) {
-      return res.status(404).json({ error: "Job not found or access denied" });
-    }
+    if (!deleted) return res.status(404).json({ error: "Job not found" });
 
-    res.status(200).json({ message: "Job deleted successfully" });
+    return res.status(200).json({ message: "Job deleted successfully" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 });
 

@@ -1,11 +1,10 @@
-// models/Job.js
 import mongoose from "mongoose";
 
 const jobSchema = new mongoose.Schema(
   {
-    position: { type: String, required: true },
-    company: { type: String, required: true },
-    location: { type: String, required: true },
+    position: { type: String, required: true, trim: true },
+    company: { type: String, required: true, trim: true },
+    location: { type: String, required: true, trim: true },
     status: {
       type: String,
       enum: ["Applied", "Interview", "Rejected", "Offer"],
@@ -20,6 +19,7 @@ const jobSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
   },
   { timestamps: true }

@@ -1,18 +1,28 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { demo } from "../services/jobService";
 
-export const AuthContext = createContext();
+export const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
+    const stored = localStorage.getItem("user");
+    return stored ? JSON.parse(stored) : null;
   });
 
   const [token, setToken] = useState(() => localStorage.getItem("token") || "");
 
+  // If token removed manually, clear state
+  useEffect(() => {
+    if (!token) return;
+  }, [token]);
+
   const login = (userData, tokenData) => {
+    // real auth -> disable demo
+    if (demo.isEnabled()) demo.disable({ clear: false });
+
     setUser(userData);
     setToken(tokenData);
+
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("token", tokenData);
   };
@@ -34,6 +44,6 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 export const useAuth = () => useContext(AuthContext);
